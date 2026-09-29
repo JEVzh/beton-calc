@@ -4,138 +4,228 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#1a252f">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Калькулятор бетона</title>
-    
-    <!-- Ссылка на манифест -->
     <link rel="manifest" href="manifest.json">
-    <!-- Иконка для Apple -->
     <link rel="apple-touch-icon" href="icon.png">
-
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: sans-serif; background: #1a252f; color: #ecf0f1; padding: 12px; }
-        .header { background: linear-gradient(90deg, #c0392b, #2980b9); padding: 12px; border-radius: 10px; text-align: center; font-weight: bold; margin-bottom: 12px; }
-        .mode-toggle { display: flex; gap: 10px; margin-bottom: 12px; }
-        .mode-btn { flex: 1; padding: 10px; background: #2c3e50; border: 2px solid #34495e; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #1a252f; color: #ecf0f1; padding: 12px; min-height: 100vh; }
+        .header { background: linear-gradient(90deg, #c0392b, #8e44ad, #2980b9); padding: 12px; border-radius: 10px; text-align: center; font-size: 16px; font-weight: bold; margin-bottom: 12px; }
+        .mode-toggle { display: flex; gap: 10px; justify-content: center; margin-bottom: 12px; }
+        .mode-btn { flex: 1; padding: 10px; background: #2c3e50; border: 2px solid #34495e; border-radius: 8px; color: #ecf0f1; font-size: 12px; font-weight: bold; cursor: pointer; }
         .mode-btn.active { background: #27ae60; border-color: #2ecc71; }
         .input-group { background: #243342; border: 2px solid #34495e; border-radius: 10px; padding: 12px; margin-bottom: 12px; }
         .input-row { display: flex; align-items: center; margin-bottom: 10px; gap: 10px; }
+        .input-row:last-child { margin-bottom: 0; }
         .input-label { flex: 1; font-size: 12px; font-weight: bold; }
-        select, input { width: 160px; padding: 8px; border-radius: 8px; border: 2px solid #3498db; font-weight: bold; }
+        select, input { width: 160px; padding: 8px; background: #fff; color: #1a252f; border: 2px solid #3498db; border-radius: 8px; font-size: 12px; font-weight: bold; }
+        input[type="number"] { border-color: #27ae60; text-align: center; }
+        .mix-desc { color: #f39c12; font-size: 10px; font-style: italic; margin-top: 8px; line-height: 1.4; }
         .results { background: #243342; border: 2px solid #34495e; border-radius: 10px; padding: 12px; }
-        .cards-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+        .results-title { color: #f39c12; font-size: 12px; font-weight: bold; margin-bottom: 12px; text-align: center; }
+        .cards-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 8px; }
         .card { background: #2c3e50; border: 2px solid #3498db; border-radius: 10px; padding: 8px; text-align: center; }
-        .card-value { font-size: 20px; font-weight: bold; margin: 4px 0; }
-        .card-sub { color: #95a5a6; font-size: 10px; }
+        .card-title { color: #bdc3c7; font-size: 11px; font-weight: bold; margin-bottom: 4px; }
+        .card-value { font-size: 20px; font-weight: bold; margin-bottom: 4px; }
+        .card-sub { color: #95a5a6; font-size: 10px; line-height: 1.3; }
         .total-card { grid-column: 1 / -1; border-color: #2ecc71; }
         .total-card .card-value { color: #2ecc71; }
+        .info-frame { background: #2c3e50; border: 2px solid #7f8c8d; border-radius: 10px; padding: 10px; margin-top: 8px; font-size: 10px; line-height: 1.5; }
+        .info-line { margin-bottom: 6px; }
+        .info-line:last-child { margin-bottom: 0; }
+        .info-line b { color: #f39c12; }
     </style>
 </head>
 <body>
-    <div class="header">КАЛЬКУЛЯТОР БЕТОНА</div>
+    <div class="header">КАЛЬКУЛЯТОР БЕТОНА И РАСТВОРА</div>
+
     <div class="mode-toggle">
-        <button class="mode-btn active" id="mode-std" onclick="setMode('std')">Стандарт</button>
-        <button class="mode-btn" id="mode-pgs" onclick="setMode('pgs')">ПЩС</button>
+        <button class="mode-btn active" id="mode-std" onclick="setMode('std')">Расчёт стандарт</button>
+        <button class="mode-btn" id="mode-pgs" onclick="setMode('pgs')">Расчёт для ПЩС</button>
     </div>
+
     <div class="input-group">
         <div class="input-row">
-            <label class="input-label">Цемент:</label>
-            <select id="cement" onchange="updateMixes()">
-                <option value="expert500">ЭКСПЕРТ 500</option>
-                <option value="profi450">ПРОФИ 450</option>
+            <label class="input-label">Марка цемента:</label>
+            <select id="cement" onchange="onCementChange()">
+                <option value="expert500">Сибцем ЭКСПЕРТ 500 (ЦЕМ I 42,5Н)</option>
+                <option value="profi450">Сибцем ПРОФИ 450 (ЦЕМ II/А-ЗО 32,5Б)</option>
             </select>
         </div>
         <div class="input-row">
-            <label class="input-label">Смесь:</label>
+            <label class="input-label">Тип смеси:</label>
             <select id="mix" onchange="calculate()"></select>
         </div>
-        <div class="input-row">
-            <label class="input-label">Объём (л):</label>
-            <input type="number" id="volume" value="50" oninput="calculate()">
+        <div class="mix-desc" id="mix-desc"></div>
+        <div class="input-row" style="margin-top: 10px;">
+            <label class="input-label">Нужный объём ГОТОВОЙ смеси:</label>
+            <input type="number" id="volume" value="50" min="1" max="20000" step="1" oninput="calculate()">
         </div>
         <div class="input-row">
-            <label class="input-label">Ведро (л):</label>
-            <input type="number" id="bucket" value="10" oninput="calculate()">
+            <label class="input-label">Объём вашего ведра:</label>
+            <input type="number" id="bucket" value="10" min="1" max="50" step="1" oninput="calculate()">
         </div>
     </div>
+
     <div class="results">
-        <div class="cards-grid" id="cards"></div>
+        <div class="results-title">РЕЗУЛЬТАТ РАСЧЁТА</div>
+        <div class="cards-grid" id="cards-grid"></div>
+        <div class="info-frame" id="info-frame"></div>
     </div>
 
     <script>
-        // Регистрация Service Worker
         if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(registration => {
-                        console.log('SW зарегистрирован:', registration.scope);
-                    })
-                    .catch(error => {
-                        console.log('Ошибка регистрации SW:', error);
-                    });
+            window.addEventListener('load', function () {
+                navigator.serviceWorker.register('./sw.js').catch(function (e) { console.log('SW:', e); });
             });
         }
 
-        const RECIPES = {
-            expert500: { 'М150': {g:0, s:17, w:4, d:2.2}, 'М200': {g:14, s:11, w:4, d:2.35}, 'М300': {g:12, s:9, w:3, d:2.35}, 'М400': {g:9, s:7, w:2.5, d:2.4} },
-            profi450: { 'М150': {g:0, s:16, w:4, d:2.2}, 'М200': {g:12, s:9, w:4, d:2.35}, 'М300': {g:10, s:8, w:3, d:2.35}, 'М400': {g:8, s:6, w:2.5, d:2.4} }
-        };
-        let mode = 'std';
+        var REF_BAG_KG = 50.0;
+        var DENSITY = { cement: 1.30, sand: 1.55, gravel: 1.45, water: 1.00, pgs: 1.60 };
 
-        function setMode(m) {
-            mode = m;
-            document.getElementById('mode-std').className = m==='std' ? 'mode-btn active' : 'mode-btn';
-            document.getElementById('mode-pgs').className = m==='pgs' ? 'mode-btn active' : 'mode-btn';
+        var RECIPES = {
+            expert500: {
+                color: '#e74c3c',
+                mixes: {
+                    'Бетон М150 (класс В12,5)': { gravel: 0.0, sand: 17.0, water: 4.0, density: 2.20, source: 'pack', desc: 'Стяжки пола, подготовительные работы' },
+                    'Бетон М200 (класс В15)': { gravel: 14.0, sand: 11.0, water: 4.0, density: 2.35, source: 'pack', desc: 'Фундаменты, перекрытия, дорожки' },
+                    'Бетон М300 (класс В22,5)': { gravel: 12.0, sand: 9.0, water: 3.0, density: 2.35, source: 'pack', desc: 'Ответственные конструкции, лестницы, колонны' },
+                    'Бетон М350 (класс В25)': { gravel: 10.0, sand: 8.0, water: 3.0, density: 2.35, source: 'calc', desc: 'Прочные конструкции, монолитные каркасы' },
+                    'Бетон М400 (класс В30)': { gravel: 9.0, sand: 7.0, water: 2.5, density: 2.40, source: 'calc', desc: 'Максимальная прочность: чаши, колонны, ригели' },
+                    'Раствор кладочный/штукатурный М100': { gravel: 0.0, sand: 18.5, water: 4.5, density: 2.00, source: 'pack', desc: 'Кладка кирпича, штукатурка стен' }
+                }
+            },
+            profi450: {
+                color: '#3498db',
+                mixes: {
+                    'Бетон М150 (класс В12,5)': { gravel: 0.0, sand: 16.0, water: 4.0, density: 2.20, source: 'pack', desc: 'Стяжки пола, подготовительные работы' },
+                    'Бетон М200 (класс В15)': { gravel: 12.0, sand: 9.0, water: 4.0, density: 2.35, source: 'pack', desc: 'Фундаменты, перекрытия, дорожки' },
+                    'Бетон М300 (класс В22,5)': { gravel: 10.0, sand: 8.0, water: 3.0, density: 2.35, source: 'pack', desc: 'Ответственные конструкции, лестницы, колонны' },
+                    'Бетон М350 (класс В25)': { gravel: 9.0, sand: 7.0, water: 2.5, density: 2.35, source: 'calc', desc: 'Прочные конструкции, монолитные каркасы' },
+                    'Бетон М400 (класс В30)': { gravel: 8.0, sand: 6.0, water: 2.5, density: 2.40, source: 'calc', desc: 'Предельная марка для этого цемента, большой расход' },
+                    'Раствор кладочный/штукатурный М100': { gravel: 0.0, sand: 15.0, water: 4.5, density: 2.00, source: 'pack', desc: 'Кладка кирпича, штукатурка стен' }
+                }
+            }
+        };
+
+        var currentMode = 'std';
+
+        function setMode(mode) {
+            currentMode = mode;
+            document.getElementById('mode-std').classList.toggle('active', mode === 'std');
+            document.getElementById('mode-pgs').classList.toggle('active', mode === 'pgs');
             calculate();
         }
 
-        function updateMixes() {
-            const c = document.getElementById('cement').value;
-            const sel = document.getElementById('mix');
-            sel.innerHTML = '';
-            for(let k in RECIPES[c]) {
-                let o = document.createElement('option');
-                o.value = k; o.text = k;
-                sel.add(o);
+        function onCementChange() {
+            var cement = document.getElementById('cement').value;
+            var mixSelect = document.getElementById('mix');
+            mixSelect.innerHTML = '';
+            var mixes = RECIPES[cement].mixes;
+            for (var name in mixes) {
+                var option = document.createElement('option');
+                option.value = name;
+                option.textContent = name;
+                mixSelect.appendChild(option);
             }
             calculate();
         }
 
         function calculate() {
-            const cKey = document.getElementById('cement').value;
-            const mKey = document.getElementById('mix').value;
-            const r = RECIPES[cKey][mKey];
-            const vol = parseFloat(document.getElementById('volume').value) || 0;
-            const bkt = parseFloat(document.getElementById('bucket').value) || 10;
-            
-            if(!vol) return;
+            var cementKey = document.getElementById('cement').value;
+            var mixName = document.getElementById('mix').value;
+            var mix = RECIPES[cementKey].mixes[mixName];
+            if (!mix) return;
 
-            const scale = vol / 50; 
-            const cem = (50 / 1.3 / bkt * scale).toFixed(1);
-            const sand = (r.s * scale).toFixed(1);
-            const grav = (r.g * scale).toFixed(1);
-            const water = (r.w * scale).toFixed(1);
+            var bucket = parseFloat(document.getElementById('bucket').value) || 10;
+            var target = parseFloat(document.getElementById('volume').value) || 50;
+            if (bucket <= 0 || target <= 0) return;
 
-            let html = `
-                <div class="card"><div>ЦЕМЕНТ</div><div class="card-value" style="color:#e74c3c">${cem} вед.</div></div>
-                <div class="card"><div>ПЕСОК</div><div class="card-value" style="color:#f1c40f">${sand} вед.</div></div>
-            `;
-            
-            if(mode === 'pgs' && r.g > 0) {
-                 const pgs = ((parseFloat(sand) + parseFloat(grav)) * 0.9).toFixed(1);
-                 html += `<div class="card"><div>ПЩС</div><div class="card-value" style="color:#1abc9c">${pgs} вед.</div></div>`;
-            } else if (r.g > 0) {
-                 html += `<div class="card"><div>ЩЕБЕНЬ</div><div class="card-value" style="color:#e67e22">${grav} вед.</div></div>`;
+            var usePgs = (currentMode === 'pgs');
+            var hasGravel = mix.gravel > 0;
+            var pgsMode = usePgs && hasGravel;
+
+            var sandL = mix.sand * bucket;
+            var gravelL = mix.gravel * bucket;
+            var waterL = mix.water * bucket;
+
+            var massPerBag = REF_BAG_KG + sandL * DENSITY.sand + gravelL * DENSITY.gravel + waterL * DENSITY.water;
+            var outputPerBag = massPerBag / mix.density;
+            var scale = target / outputPerBag;
+
+            var cementKg = REF_BAG_KG * scale;
+            var cementL = cementKg / DENSITY.cement;
+            var cementB = cementL / bucket;
+
+            var sandB = mix.sand * scale;
+            var gravelB = mix.gravel * scale;
+            var waterB = mix.water * scale;
+
+            var sandKg = sandB * bucket * DENSITY.sand;
+            var gravelKg = gravelB * bucket * DENSITY.gravel;
+            var waterNeed = waterB * bucket;
+            var totalMass = massPerBag * scale;
+
+            var pgsKg = 0, pgsL = 0, pgsB = 0, sandPct = 0, gravelPct = 0;
+            if (hasGravel) {
+                pgsKg = sandKg + gravelKg;
+                pgsL = pgsKg / DENSITY.pgs;
+                pgsB = pgsL / bucket;
+                sandPct = 100.0 * sandKg / pgsKg;
+                gravelPct = 100.0 - sandPct;
             }
 
-            html += `
-                <div class="card"><div>ВОДА</div><div class="card-value" style="color:#3498db">${water} вед.</div></div>
-                <div class="card total-card"><div>ИТОГО</div><div class="card-value">${vol} л</div></div>
-            `;
-            document.getElementById('cards').innerHTML = html;
+            var src = (mix.source === 'pack') ? 'рецепт с упаковки' : 'пропорция расчётная (на упаковке нет)';
+            document.getElementById('mix-desc').textContent = 'Назначение: ' + mix.desc + '. Источник: ' + src + '.';
+
+            var color = RECIPES[cementKey].color;
+            var cards = [];
+            cards.push({ title: 'ЦЕМЕНТ', value: cementB.toFixed(1) + ' вед.', sub: '≈ ' + cementL.toFixed(0) + ' л · ' + cementKg.toFixed(1) + ' кг\n= ' + scale.toFixed(2) + ' мешка (50 кг)', color: color });
+
+            if (pgsMode) {
+                cards.push({ title: 'ПЩС (замена песка + щебня)', value: pgsB.toFixed(1) + ' вед.', sub: '≈ ' + pgsL.toFixed(0) + ' л · ≈ ' + pgsKg.toFixed(0) + ' кг\nсостав: песок ' + sandPct.toFixed(0) + '% / щебень ' + gravelPct.toFixed(0) + '%', color: '#16a085' });
+            } else {
+                cards.push({ title: 'ПЕСОК', value: sandB.toFixed(1) + ' вед.', sub: '≈ ' + (sandB * bucket).toFixed(0) + ' л · ≈ ' + sandKg.toFixed(0) + ' кг', color: '#f39c12' });
+                if (hasGravel) {
+                    cards.push({ title: 'ЩЕБЕНЬ', value: gravelB.toFixed(1) + ' вед.', sub: '≈ ' + (gravelB * bucket).toFixed(0) + ' л · ≈ ' + gravelKg.toFixed(0) + ' кг', color: '#e67e22' });
+                }
+            }
+            cards.push({ title: 'ВОДА', value: waterB.toFixed(1) + ' вед.', sub: '≈ ' + waterNeed.toFixed(1) + ' л · ≈ ' + waterNeed.toFixed(0) + ' кг', color: '#3498db' });
+
+            var grid = document.getElementById('cards-grid');
+            grid.innerHTML = '';
+            cards.forEach(function (card) {
+                var el = document.createElement('div');
+                el.className = 'card';
+                el.style.borderColor = card.color;
+                el.innerHTML = '<div class="card-title">' + card.title + '</div>' +
+                    '<div class="card-value" style="color:' + card.color + '">' + card.value + '</div>' +
+                    '<div class="card-sub">' + card.sub.replace(/\n/g, '<br>') + '</div>';
+                grid.appendChild(el);
+            });
+
+            var total = document.createElement('div');
+            total.className = 'card total-card';
+            total.innerHTML = '<div class="card-title">ГОТОВАЯ СМЕСЬ</div>' +
+                '<div class="card-value">' + target + ' л</div>' +
+                '<div class="card-sub">≈ ' + (target / bucket).toFixed(1) + ' вед. · ' + (target / 1000).toFixed(3) + ' м³<br>масса ≈ ' + totalMass.toFixed(0) + ' кг</div>';
+            grid.appendChild(total);
+
+            var gravelTxt = hasGravel ? ('щебень ' + mix.gravel + ' вед., ') : '';
+            var info = [];
+            info.push('<b>Базовый рецепт на 50 кг цемента (ведро ' + bucket + ' л):</b> песок ' + mix.sand + ' вед., ' + gravelTxt + 'вода ' + mix.water + ' вед.');
+            info.push('Выход с 50 кг ≈ <b>' + outputPerBag.toFixed(0) + ' л</b> (плотность ' + (mix.density * 1000).toFixed(0) + ' кг/м³); нужно <b>' + cementKg.toFixed(0) + ' кг</b> цемента (' + scale.toFixed(2) + ' мешка по 50 кг).');
+            if (pgsMode) {
+                info.push('<b>Режим ПЩС:</b> ' + pgsB.toFixed(1) + ' вед. (≈' + pgsKg.toFixed(0) + ' кг) заменяют песок и щебень. Подбирайте ПЩС с составом песок ≈' + sandPct.toFixed(0) + '% / щебень ≈' + gravelPct.toFixed(0) + '% по массе; если в вашем ПЩС песка меньше — добавьте 1–2 ведра песка на замес.');
+            } else if (usePgs && !hasGravel) {
+                info.push('В этой смеси нет щебня — ПЩС не применяется, расчёт выполнен по стандарту.');
+            }
+            document.getElementById('info-frame').innerHTML = info.map(function (l) { return '<div class="info-line">' + l + '</div>'; }).join('');
         }
 
-        updateMixes();
+        onCementChange();
     </script>
 </body>
 </html>
