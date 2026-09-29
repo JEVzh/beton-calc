@@ -1,4 +1,4 @@
-var CACHE_NAME = 'beton-v3';
+var CACHE_NAME = 'beton-v4';
 var urlsToCache = ['./', './index.html', './manifest.json', './icon.png'];
 
 self.addEventListener('install', function (event) {
