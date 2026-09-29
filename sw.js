@@ -1,47 +1,33 @@
-const CACHE_NAME = 'beton-v1';
-const urlsToCache = [
-  './',
-  './index.html',
-  './manifest.json',
-  './icon.png'
-];
+var CACHE_NAME = 'beton-v2';
+var urlsToCache = ['./', './index.html', './manifest.json', './icon.png'];
 
-// Установка: кэшируем файлы
-self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => {
-        console.log('Opened cache');
-        return cache.addAll(urlsToCache);
-      })
-  );
+self.addEventListener('install', function (event) {
+    event.waitUntil(caches.open(CACHE_NAME).then(function (cache) { return cache.addAll(urlsToCache); }));
+    self.skipWaiting();
 });
 
-// Активация: удаляем старые кэши
-self.addEventListener('activate', event => {
-  event.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.map(cacheName => {
-          if (cacheName !== CACHE_NAME) {
-            return caches.delete(cacheName);
-          }
+self.addEventListener('activate', function (event) {
+    event.waitUntil(
+        caches.keys().then(function (names) {
+            return Promise.all(names.map(function (n) {
+                if (n !== CACHE_NAME) { return caches.delete(n); }
+            }));
         })
-      );
-    })
-  );
+    );
+    self.clients.claim();
 });
 
-// Запрос: берем из кэша, если нет — из сети
-self.addEventListener('fetch', event => {
-  event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        // Cache hit - return response
-        if (response) {
-          return response;
-        }
-        return fetch(event.request);
-      })
-  );
+// Сначала пробуем сеть (всегда свежая версия), офлайн — берём из кэша
+self.addEventListener('fetch', function (event) {
+    event.respondWith(
+        fetch(event.request).then(function (resp) {
+            var copy = resp.clone();
+            caches.open(CACHE_NAME).then(function (cache) { cache.put(event.request, copy); });
+            return resp;
+        }).catch(function () {
+            return caches.match(event.request).then(function (r) {
+                return r || caches.match('./index.html');
+            });
+        })
+    );
 });
