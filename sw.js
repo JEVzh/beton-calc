@@ -1,4 +1,4 @@
-var CACHE_NAME = 'beton-v2';
+var CACHE_NAME = 'beton-v3';
 var urlsToCache = ['./', './index.html', './manifest.json', './icon.png'];
 
 self.addEventListener('install', function (event) {
@@ -17,7 +17,6 @@ self.addEventListener('activate', function (event) {
     self.clients.claim();
 });
 
-// Сначала пробуем сеть (всегда свежая версия), офлайн — берём из кэша
 self.addEventListener('fetch', function (event) {
     event.respondWith(
         fetch(event.request).then(function (resp) {
